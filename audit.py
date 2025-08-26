@@ -286,7 +286,13 @@ def main():
         k_alternates = int(winners.get("k_alternates") or 0)
         k_total      = k_primary + k_alternates
 
+        seed_commit  = (commit.get("seed_commit_hex") or "").strip().lower()
+        revealed_at  = commit.get("revealed_at")
+        
         print("[Level 3] Reproduce winners")
+        
+        print(f"  seed_commit  : {format_short_hex(seed_commit) or '(missing)'}")
+        print(f"  revealed_at  : {revealed_at or '(not revealed)'}")
         print(f"  seed_hex     : {format_short_hex(seed_hex)}")
         print(f"  k_primary    : {k_primary}")
         print(f"  k_alternates : {k_alternates}")
