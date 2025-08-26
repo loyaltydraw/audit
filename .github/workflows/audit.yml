@@ -1,0 +1,39 @@
+name: Public Audit (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      period:
+        description: "Period (YYYY-MM), e.g., 2025-07"
+        required: true
+        type: string
+      base:
+        description: "Base URL hosting artifacts"
+        required: true
+        default: "https://audit.loyaltydraw.com"
+        type: string
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Show inputs
+        run: |
+          echo "Period: ${{ inputs.period }}"
+          echo "Base  : ${{ inputs.base }}"
+
+      - name: Run Levels 1 + 2 + 3 (skip Level 3 if seed not revealed)
+        run: |
+          python3 audit.py \
+            --period "${{ inputs.period }}" \
+            --base "${{ inputs.base }}" \
+            --level all \
+            --on-missing-seed skip
