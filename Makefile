@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Loyaltydraw.com, Inc.
+
 # Simple helpers for local use and CI.
 # Usage examples:
 #   make verify    PERIOD=2025-07 BASE=https://audit.loyaltydraw.com

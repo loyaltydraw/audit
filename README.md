@@ -1,3 +1,8 @@
+<!--
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2025 Loyaltydraw.com, Inc.
+-->
+
 # Loyalty Draw - Public Audit Kit
 
 Verify any Loyalty Draw period using the public artifacts at:
@@ -182,4 +187,8 @@ Manual workflow in `.github/workflows/audit.yml`:
 - "**python not found**"
   Install Python 3.10+ from python.org. On macOS/Linux use `python3`; on Windows use `python`.
 
+---
 
+## License
+
+Apache-2.0 - see LICENSE (additional attribution in NOTICE).
