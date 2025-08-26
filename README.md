@@ -8,11 +8,11 @@ Verify any Loyalty Draw period using the public artifacts at:
 This kit lets anyone confirm:
 
 - **Level 1 – Snapshot integrity (pre-reveal)**  
-  The published `snapshot.csv` is exactly the one used to run the draw.
+  The published `snapshot.csv` bytes are *exactly* the ones the draw used.
 - **Level 2 – Structural & internal coherence**  
-  The snapshot is well-formed (ordering, types, totals) and its **canonical snapshot hash** matches what the draw reported.
+  The snapshot is well-formed (ordering, types, totals) **and** when rewritten in canonical form its **CSV-bytes hash** equals the value reported by the draw.
 - **Level 3 – Reproduce winners (post-reveal)**  
-  Once the seed is revealed in `winners.json`, recompute the winners and compare to the published winners.
+  After the seed is revealed in `winners.json`, recompute the winners and compare them to the published list.
 
 > No third-party packages. Requires **Python 3.10+** only.
 
@@ -36,13 +36,13 @@ python3 audit.py --period 2025-07 --base https://audit.loyaltydraw.com
 ## No internet? Use local files
 
 Download the two files (same folder):
-```
+```bash
 ./winners.json
 ./snapshot.csv
 ```
 
 Run:
-```
+```bash
 python3 audit.py --winners ./winners.json --snapshot ./snapshot.csv
 ```
 
@@ -61,16 +61,16 @@ python3 audit.py --winners ./winners.json --snapshot ./snapshot.csv
 **Level 2 - Structural & internal coherence**
 
 - Parse `snapshot.csv` (`shard,user_id,weight`) and verify:
-  - Shards are non-decreasing (0..buckets-1) and users within a shard are ascending (canonical ordering).
-  - No negative weights; types are correct.
-  - Totals (`users`, `entries`) equal `winners.json.totals`.
-- Recompute the **canonical snapshot hash** from the parsed records and confirm it equals `winners.json.snapshot_hash_hex`.
+  - **Canonical ordering**: shards non-decreasing (0…buckets-1) and, within a shard, `user_id` ascending.
+  - **Types & values**: `weight` is an integer ≥ 0.
+  - **Totals**: `users` and `entries` equal `winners.json.totals`.
+- **Canonical CSV-bytes hash**: rewrite the rows in that canonical order with the header `shard,user_id,weight\n`, hash the resulting **CSV bytes** with BLAKE2b-256, and confirm it equals `winners.json.snapshot_hash_hex`.
 
 **Level 3 - Reproduce winners (post-reveal)**
 
 - Use `winners.json.commit.seed_hex` (revealed seed).
 - Recompute scores via **Efraimidis–Spirakis** weighted sampling *without replacement*:
-  ```
+  ```sql
   For each entrant (user_id, weight, shard):
     u = BLAKE2b-256( "derive_u|ver:1|" + seed
                      + "|period:" + PERIOD
@@ -80,10 +80,10 @@ python3 audit.py --winners ./winners.json --snapshot ./snapshot.csv
   Keep K = k_primary + k_alternates smallest scores (best first).
   ```
 - Convert full IDs from the snapshot to **display aliases** for comparison:
-  ```
+  ```ini
   alias = first8 + "…" + last4     # e.g., c0ffee12…9f0e
   ```
-- Compare recomputed aliases with ```winners_primary``` + ```winners_alternates```.
+- Compare recomputed aliases with `winners_primary` + `winners_alternates`.
 
 ---
 
@@ -91,7 +91,7 @@ python3 audit.py --winners ./winners.json --snapshot ./snapshot.csv
 
 **Before seed reveal**
 
-```
+```yaml
 == LoyaltyDraw Audit ==
 Mode           : URL
 Period         : 2025-07
@@ -106,7 +106,7 @@ Base           : https://audit.loyaltydraw.com
   rows         : 18,234
   totals       : users=18,234 entries=47,901  ✅ match winners.json
   ordering     : ✅ canonical
-  hash         : ✅ canonical snapshot hash matches
+  hash         : ✅ canonical CSV-bytes hash match
 
 [Level 3] Reproduce winners
   status       : ⏭️  skipped - seed not revealed yet
@@ -114,11 +114,11 @@ Base           : https://audit.loyaltydraw.com
 
 **After seed reveal**
 
-```
+```yaml
 [Level 3] Reproduce winners
   seed_hex     : ab12cd34…9f01eeff
   k_primary    : 111
-  k_alternates : 235
+  k_alternates : 222
   compare      : ✅ aliases match
 ```
 
@@ -128,7 +128,7 @@ If something doesn’t match, the tool prints the first few differences.
 
 ## Command reference 
 
-```
+```bash
 python3 audit.py \
   --period 2025-07 \
   --base https://audit.loyaltydraw.com \
@@ -138,14 +138,18 @@ python3 audit.py \
   --snapshot <path-or-url>
   --quiet                # less verbose
 ```
-- Use either ```--base + --period``` or explicit ```--winners/--snapshot```.
-- ```--on-missing-seed``` controls Level 3 when the seed hasn’t been revealed yet.
+
+- Use either `--base + --period` or explicit `--winners/--snapshot`.
+- `--on-missing-seed` controls Level 3 when the seed hasn’t been revealed yet.
+
+**Exit codes (for CI):**
+- `0` success; `2` L1 failed; `3` L2 failed; `4/6` L3 failed.
 
 ---
 
 ## Make targets (optional)
 
-```
+```make
 make verify    PERIOD=2025-07 BASE=https://audit.loyaltydraw.com   # Levels 1 + 2
 make reproduce PERIOD=2025-07 BASE=https://audit.loyaltydraw.com   # Level 3 (requires seed)
 make audit     PERIOD=2025-07 BASE=https://audit.loyaltydraw.com   # Levels 1 + 2 + 3 (L3 skipped if no seed)
