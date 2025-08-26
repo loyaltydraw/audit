@@ -1,8 +1,8 @@
 # Public Audit Results - `<YYYY-MM>`
 
 ## Artifacts
-- Winners:  https://audit.loyaltydraw.com/<`<YYYY-MM>`>/winners.json
-- Snapshot: https://audit.loyaltydraw.com/<`<YYYY-MM>`>/snapshot.csv
+- Winners:  `https://audit.loyaltydraw.com/<YYYY-MM>/winners.json`
+- Snapshot: `https://audit.loyaltydraw.com/<YYYY-MM>/snapshot.csv`
 
 ## Command used
 `python3 audit.py --period <YYYY-MM> --base https://audit.loyaltydraw.com --level all --on-missing-seed skip`
