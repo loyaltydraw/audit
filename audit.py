@@ -106,6 +106,14 @@ def compute_canonical_snapshot_hash(period: str, rows: Iterable[Row]) -> str:
         h.update(b"\n")
     return h.hexdigest()
 
+def compute_csv_bytes_hash(rows: Iterable[Row]) -> str:
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(["shard", "user_id", "weight"])
+    for shard, user_id, weight in rows:
+        w.writerow([int(shard), str(user_id), int(weight)])
+    return hashlib.blake2b(buf.getvalue().encode("utf-8"), digest_size=32).hexdigest()
+
 def validate_canonical_order(rows: List[Row]) -> Tuple[bool, Optional[str]]:
     """Ensure shards are non-decreasing, and within each shard user_id is ascending."""
     last_shard = None
@@ -247,9 +255,9 @@ def main():
         print(f"  ordering     : {'✅ canonical' if ok_order else f'❌ not canonical: {reason}'}")
 
         # canonical snapshot hash from rows
-        recomputed = compute_canonical_snapshot_hash(period, rows).strip().lower()
+        recomputed = compute_csv_bytes_hash(rows).strip().lower()
         expected_h = (winners.get("snapshot_hash_hex") or "").strip().lower()
-        print(f"  hash         : {'✅ canonical snapshot hash matches' if expected_h == recomputed else '❌ canonical snapshot hash mismatch'}")
+        print(f"  hash         : {'✅ canonical CSV-bytes hash match' if expected_h == recomputed else '❌ canonical CSV-bytes hash mismatch'}")
         if not (ok_totals and ok_order and expected_h == recomputed):
             print()
             sys.exit(3)
